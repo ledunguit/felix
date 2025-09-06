@@ -20,11 +20,3 @@ trust-dns-proto = "0.23.2"
 
 [dev-dependencies]
 hickory-resolver = "0.25.2"
-
-[profile.release]
-opt-level = 3
-lto = true
-codegen-units = 1
-strip = "symbols"
-panic = "abort"
-incremental = false

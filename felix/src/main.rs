@@ -6,6 +6,7 @@ use hickory_resolver::{
 
 #[tokio::main]
 async fn main() {
+    env_logger::init();
     let listen: SocketAddr = "127.0.0.1:0".parse().unwrap();
     let state = ResolverState::new("8.8.8.8:53".parse().unwrap());
     state.add_domain("local.dev", Ipv4Addr::new(127,0,0,1));
