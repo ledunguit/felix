@@ -38,6 +38,29 @@ mod tests {
         dm.remove("foo.dev");
         assert!(dm.resolve("foo.dev").is_none());
     }
+
+    #[test]
+    fn test_list() {
+        let mut dm = DomainMap::new();
+        dm.set("foo.dev", Ipv4Addr::new(127, 0, 0, 1));
+        assert!(dm.resolve("foo.dev").is_some());
+
+        assert_eq!(dm.list(), vec![("foo.dev".to_string(), Ipv4Addr::new(127, 0, 0, 1))]);
+    }
+
+    #[test]
+    fn test_set_and_resolve() {
+        let mut dm = DomainMap::new();
+        dm.set("foo.dev", Ipv4Addr::new(127, 0, 0, 1));
+        assert!(dm.resolve("foo.dev").is_some());
+    }
+
+    #[test]
+    fn test_set_and_resolve_wildcard() {
+        let mut dm = DomainMap::new();
+        dm.set("*.dev", Ipv4Addr::new(127, 0, 0, 1));
+        assert!(dm.resolve("foo.dev").is_some());
+    }
 }
 
 #[cfg(test)]
