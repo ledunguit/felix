@@ -99,7 +99,7 @@ async fn handle_packet(
     log::debug!("Query from {}: {} {:?}", src, qname, qtype);
 
     // try local resolve if enabled and mapping exists (only A)
-    if let Some(ip) = state.resolve(&qname) {
+    if let Ok(Some(ip)) = state.resolve(&qname).await {
         // Only answer A queries or ANY
         if qtype == RecordType::A || qtype == RecordType::ANY {
             let mut resp = Message::new();

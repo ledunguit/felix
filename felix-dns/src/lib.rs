@@ -1,10 +1,12 @@
 pub mod domain_map;
 pub mod resolver_state;
 pub mod server_handler;
+pub mod sqlite_domain_store;
 
 pub use domain_map::DomainMap;
 pub use resolver_state::ResolverState;
 pub use server_handler::run_udp_server;
+pub use sqlite_domain_store::SqliteDomainStore;
 
 
 #[cfg(test)]
@@ -61,6 +63,47 @@ mod tests {
         dm.set("*.dev", Ipv4Addr::new(127, 0, 0, 1));
         assert!(dm.resolve("foo.dev").is_some());
     }
+
+    #[tokio::test]
+    async fn test_sqlite_domain_store() {
+        // Sử dụng in-memory SQLite database cho tests
+        let store = SqliteDomainStore::new(":memory:").await.unwrap();
+        
+        // Test set và resolve
+        store.set("example.com", Ipv4Addr::new(192, 168, 1, 1)).await.unwrap();
+        let result = store.resolve("example.com").await.unwrap();
+        assert_eq!(result, Some(Ipv4Addr::new(192, 168, 1, 1)));
+        
+        // Test wildcard
+        store.set("*.test.dev", Ipv4Addr::new(10, 0, 0, 1)).await.unwrap();
+        let result = store.resolve("api.test.dev").await.unwrap();
+        assert_eq!(result, Some(Ipv4Addr::new(10, 0, 0, 1)));
+        
+        // Test list
+        let domains = store.list().await.unwrap();
+        assert_eq!(domains.len(), 2);
+        
+        // Test remove
+        store.remove("example.com").await.unwrap();
+        let result = store.resolve("example.com").await.unwrap();
+        assert_eq!(result, None);
+    }
+
+    #[tokio::test]
+    async fn test_resolver_state_with_sqlite() {
+        // Sử dụng in-memory SQLite database cho tests
+        let state = ResolverState::new_with_sqlite("8.8.8.8:53".parse().unwrap(), ":memory:").await.unwrap();
+        
+        // Test add và resolve
+        state.add_domain("test.local", Ipv4Addr::new(127, 0, 0, 1)).await.unwrap();
+        let result = state.resolve("test.local").await.unwrap();
+        assert_eq!(result, Some(Ipv4Addr::new(127, 0, 0, 1)));
+        
+        // Test list
+        let domains = state.list_domains().await.unwrap();
+        assert_eq!(domains.len(), 1);
+        assert_eq!(domains[0], ("test.local".to_string(), Ipv4Addr::new(127, 0, 0, 1)));
+    }
 }
 
 #[cfg(test)]
@@ -80,7 +123,7 @@ mod integration_tests {
             // start DNS server
             let listen: SocketAddr = "127.0.0.1:0".parse().unwrap();
             let state = ResolverState::new("8.8.8.8:53".parse().unwrap());
-            state.add_domain("local.dev", Ipv4Addr::new(127,0,0,1));
+            state.add_domain_sync("local.dev", Ipv4Addr::new(127,0,0,1));
 
             let socket = tokio::net::UdpSocket::bind(listen).await.unwrap();
             let local_addr = socket.local_addr().unwrap();
