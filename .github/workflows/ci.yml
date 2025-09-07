@@ -13,11 +13,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with: 
-          path: ./felix-dns
 
-      - name: Build
+      - name: Build felix-dns
+        working-directory: ./felix-dns
         run: cargo build --verbose
 
-      - name: Run tests
+      - name: Run tests felix-dns
+        working-directory: ./felix-dns
         run: cargo test --verbose
